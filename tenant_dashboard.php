@@ -127,7 +127,12 @@ $userEmail = $_SESSION['user_email'] ?? '';
                 <p><?php echo htmlspecialchars($userEmail, ENT_QUOTES, 'UTF-8'); ?></p>
                 <span class="role-badge">Tenant</span>
             </div>
-            <a href="logout.php" class="logout-btn">Log Out</a>
+            <div class="header-buttons">
+                <form action="logout.php" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to log out?');">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                    <button type="submit" class="logout-btn" style="cursor: pointer; border: none;">Log Out</button>
+                </form>
+            </div>
         </header>
 
         <main class="grid-cards">
@@ -140,7 +145,7 @@ $userEmail = $_SESSION['user_email'] ?? '';
             <section class="card">
                 <h3>Find Houses</h3>
                 <p>Browse listings matching your budget, location, and requirements.</p>
-                <a href="#" class="btn-action">Browse Listings</a>
+                <a href="properties.php" class="btn-action">Browse Listings</a>
             </section>
 
             <section class="card">
