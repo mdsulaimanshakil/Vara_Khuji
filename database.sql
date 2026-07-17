@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS properties (
     bathrooms INT UNSIGNED NOT NULL,
     area_sqft INT UNSIGNED DEFAULT NULL,
     availability_status ENUM('Available', 'Booked', 'Unavailable') NOT NULL DEFAULT 'Available',
+    verification_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (landlord_id) REFERENCES users (id) ON DELETE CASCADE

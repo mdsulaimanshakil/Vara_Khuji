@@ -21,7 +21,7 @@ $sql = 'SELECT p.*, pi.image_path, u.full_name as landlord_name, u.phone as land
         FROM properties p 
         LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
         LEFT JOIN users u ON p.landlord_id = u.id 
-        WHERE 1=1';
+        WHERE p.verification_status = "Approved"';
 
 $params = [];
 
