@@ -262,7 +262,7 @@ try {
             <section class="card">
                 <h3>User Management</h3>
                 <p>Approve new landlords, suspend malicious accounts, and search active users.</p>
-                <a href="#" class="btn-action">Manage Users</a>
+                <a href="manage_users.php" class="btn-action">Manage Users</a>
             </section>
 
             <section class="card">

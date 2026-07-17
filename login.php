@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$errors) {
         try {
             $statement = $pdo->prepare(
-                'SELECT id, full_name, email, role, password_hash
+                'SELECT id, full_name, email, role, password_hash, status
                  FROM users
                  WHERE email = :email
                  LIMIT 1'
@@ -57,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!$user || !password_verify($password, (string) $user['password_hash'])) {
                 $errors[] = 'Invalid email or password.';
+            } elseif (isset($user['status']) && $user['status'] === 'Suspended') {
+                $errors[] = 'Your account has been suspended. Please contact system support.';
             } else {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = (int) $user['id'];
