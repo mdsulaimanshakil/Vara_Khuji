@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 
-startSecureSession();
-requireLogin('Landlord');
-
-$userName = htmlspecialchars((string) ($_SESSION['user_name'] ?? 'Landlord'), ENT_QUOTES, 'UTF-8');
-$userEmail = htmlspecialchars((string) ($_SESSION['user_email'] ?? ''), ENT_QUOTES, 'UTF-8');
-$csrf = htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8');
+header('Location: landlord_dashboard.php');
+exit;
 ?>
 <!DOCTYPE html>
 <html lang="en">

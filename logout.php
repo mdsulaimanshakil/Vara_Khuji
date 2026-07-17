@@ -17,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $csrfToken = (string) ($_POST['csrf_token'] ?? '');
 
 if (!validateCsrfToken($csrfToken)) {
-    header('Location: ' . $redirectTarget . '?logout_error=1');
+    $_SESSION['flash_error'] = 'Logout request could not be verified. Please try again.';
+    header('Location: ' . $redirectTarget);
     exit;
 }
 

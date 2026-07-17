@@ -26,7 +26,11 @@ CREATE TABLE IF NOT EXISTS properties (
     verification_status ENUM('Pending', 'Approved', 'Rejected') NOT NULL DEFAULT 'Pending',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (landlord_id) REFERENCES users (id) ON DELETE CASCADE
+    FOREIGN KEY (landlord_id) REFERENCES users (id) ON DELETE CASCADE,
+    KEY idx_properties_landlord_id (landlord_id),
+    KEY idx_properties_verification_status (verification_status),
+    KEY idx_properties_availability_status (availability_status),
+    KEY idx_properties_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS property_images (
@@ -35,7 +39,9 @@ CREATE TABLE IF NOT EXISTS property_images (
     image_path VARCHAR(255) NOT NULL,
     is_primary TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE
+    FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE,
+    KEY idx_property_images_property_id (property_id),
+    KEY idx_property_images_primary (property_id, is_primary)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tenant_favorites (
@@ -45,7 +51,9 @@ CREATE TABLE IF NOT EXISTS tenant_favorites (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE,
-    UNIQUE KEY unique_tenant_property (tenant_id, property_id)
+    UNIQUE KEY unique_tenant_property (tenant_id, property_id),
+    KEY idx_tenant_favorites_tenant_id (tenant_id),
+    KEY idx_tenant_favorites_property_id (property_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS rental_requests (
@@ -58,7 +66,11 @@ CREATE TABLE IF NOT EXISTS rental_requests (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (tenant_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE,
-    UNIQUE KEY unique_tenant_property_request (tenant_id, property_id)
+    UNIQUE KEY unique_tenant_property_request (tenant_id, property_id),
+    KEY idx_rental_requests_tenant_id (tenant_id),
+    KEY idx_rental_requests_property_id (property_id),
+    KEY idx_rental_requests_status (status),
+    KEY idx_rental_requests_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

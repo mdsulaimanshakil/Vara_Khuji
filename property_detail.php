@@ -27,6 +27,9 @@ $property = $propertyStmt->fetch();
 
 if (!$property) {
     http_response_code(404);
+    $_SESSION['flash_error'] = 'The selected property listing could not be found.';
+    header('Location: properties.php');
+    exit;
 }
 
 $imageStmt = $pdo->prepare('SELECT image_path, is_primary FROM property_images WHERE property_id = :property_id ORDER BY is_primary DESC, id ASC');

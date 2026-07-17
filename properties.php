@@ -65,7 +65,7 @@ if ($bathrooms !== null) {
     $params['bathrooms'] = $bathrooms;
 }
 
-$sql .= ' ORDER BY p.created_at DESC';
+$sql .= ' ORDER BY p.created_at DESC LIMIT 24';
 
 try {
     $stmt = $pdo->prepare($sql);
