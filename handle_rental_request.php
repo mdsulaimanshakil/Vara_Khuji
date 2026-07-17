@@ -6,6 +6,8 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 
 startSecureSession();
+
+// Core security gate: restrict access to authenticated Landlords only
 require_role(['Landlord']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
