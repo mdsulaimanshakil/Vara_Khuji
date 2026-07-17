@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(150) NOT NULL UNIQUE,
     phone VARCHAR(20) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('Tenant', 'Landlord') NOT NULL,
+    role ENUM('Tenant', 'Landlord', 'Admin') NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
