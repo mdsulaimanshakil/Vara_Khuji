@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
 
+startSecureSession();
+
 // Protect page and ensure user has 'Tenant' role
 require_role(['Tenant']);
 

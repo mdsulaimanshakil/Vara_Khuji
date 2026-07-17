@@ -9,6 +9,12 @@ startSecureSession();
 
 $searchQuery = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
 $statusFilter = isset($_GET['status']) ? trim((string) $_GET['status']) : 'Available';
+$minPrice = (isset($_GET['min_price']) && $_GET['min_price'] !== '') ? (float) $_GET['min_price'] : null;
+$maxPrice = (isset($_GET['max_price']) && $_GET['max_price'] !== '') ? (float) $_GET['max_price'] : null;
+$minArea = (isset($_GET['min_area']) && $_GET['min_area'] !== '') ? (int) $_GET['min_area'] : null;
+$maxArea = (isset($_GET['max_area']) && $_GET['max_area'] !== '') ? (int) $_GET['max_area'] : null;
+$bedrooms = (isset($_GET['bedrooms']) && $_GET['bedrooms'] !== '') ? (int) $_GET['bedrooms'] : null;
+$bathrooms = (isset($_GET['bathrooms']) && $_GET['bathrooms'] !== '') ? (int) $_GET['bathrooms'] : null;
 
 // Prepare SQL query with search filters
 $sql = 'SELECT p.*, pi.image_path, u.full_name as landlord_name, u.phone as landlord_phone 
@@ -27,6 +33,36 @@ if ($searchQuery !== '') {
 if ($statusFilter !== '') {
     $sql .= ' AND p.availability_status = :status';
     $params['status'] = $statusFilter;
+}
+
+if ($minPrice !== null) {
+    $sql .= ' AND p.rent >= :min_price';
+    $params['min_price'] = $minPrice;
+}
+
+if ($maxPrice !== null) {
+    $sql .= ' AND p.rent <= :max_price';
+    $params['max_price'] = $maxPrice;
+}
+
+if ($minArea !== null) {
+    $sql .= ' AND p.area_sqft >= :min_area';
+    $params['min_area'] = $minArea;
+}
+
+if ($maxArea !== null) {
+    $sql .= ' AND p.area_sqft <= :max_area';
+    $params['max_area'] = $maxArea;
+}
+
+if ($bedrooms !== null) {
+    $sql .= ' AND p.bedrooms = :bedrooms';
+    $params['bedrooms'] = $bedrooms;
+}
+
+if ($bathrooms !== null) {
+    $sql .= ' AND p.bathrooms = :bathrooms';
+    $params['bathrooms'] = $bathrooms;
 }
 
 $sql .= ' ORDER BY p.created_at DESC';
@@ -73,10 +109,16 @@ try {
         }
         .search-form {
             display: flex;
+            flex-direction: column;
             gap: 1rem;
-            max-width: 700px;
+            max-width: 800px;
             margin: 0 auto;
+        }
+        .search-main-row {
+            display: flex;
+            gap: 1rem;
             flex-wrap: wrap;
+            width: 100%;
         }
         .search-form input[type="text"] {
             flex: 2;
@@ -91,15 +133,33 @@ try {
         .search-form input[type="text"]::placeholder {
             color: #64748b;
         }
-        .search-form select {
-            flex: 1;
-            min-width: 150px;
+        .search-form select, .search-form input[type="number"] {
             padding: 0.8rem 1.2rem;
             border-radius: 8px;
             border: 1px solid #334155;
             background: #1e293b;
             color: white;
             font-size: 0.95rem;
+        }
+        .search-form select {
+            flex: 1;
+            min-width: 150px;
+        }
+        .advanced-toggle-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid #334155;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .advanced-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
         .search-btn {
             background: var(--accent);
@@ -113,6 +173,44 @@ try {
         }
         .search-btn:hover {
             background: var(--accent-strong);
+        }
+        .advanced-filters-panel {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            animation: fadeIn 0.3s ease-out;
+            text-align: left;
+        }
+        .advanced-filters-panel.active {
+            display: grid;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .filter-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .filter-group-range {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .filter-group-range input {
+            width: 100%;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .nav-back {
             display: inline-block;
@@ -229,15 +327,70 @@ try {
             <p>Search over hundreds of active rental listings in your preferred location.</p>
             
             <form method="get" class="search-form">
-                <input type="text" name="q" value="<?php echo htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Search by title, location, or keywords...">
-                <select name="status">
-                    <option value="Available" <?php echo $statusFilter === 'Available' ? 'selected' : ''; ?>>Available</option>
-                    <option value="Booked" <?php echo $statusFilter === 'Booked' ? 'selected' : ''; ?>>Booked</option>
-                    <option value="Unavailable" <?php echo $statusFilter === 'Unavailable' ? 'selected' : ''; ?>>Unavailable</option>
-                    <option value="" <?php echo $statusFilter === '' ? 'selected' : ''; ?>>All Listings</option>
-                </select>
-                <button type="submit" class="search-btn">Search</button>
+                <div class="search-main-row">
+                    <input type="text" name="q" value="<?php echo htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Search by title, location, or keywords..." style="flex: 2; min-width: 250px;">
+                    <select name="status">
+                        <option value="Available" <?php echo $statusFilter === 'Available' ? 'selected' : ''; ?>>Available</option>
+                        <option value="Booked" <?php echo $statusFilter === 'Booked' ? 'selected' : ''; ?>>Booked</option>
+                        <option value="Unavailable" <?php echo $statusFilter === 'Unavailable' ? 'selected' : ''; ?>>Unavailable</option>
+                        <option value="" <?php echo $statusFilter === '' ? 'selected' : ''; ?>>All Statuses</option>
+                    </select>
+                    <button type="button" class="advanced-toggle-btn" onclick="toggleAdvancedFilters()">
+                        ⚙️ Filters
+                    </button>
+                    <button type="submit" class="search-btn">Search</button>
+                </div>
+
+                <div class="advanced-filters-panel <?php echo ($minPrice !== null || $maxPrice !== null || $minArea !== null || $maxArea !== null || $bedrooms !== null || $bathrooms !== null) ? 'active' : ''; ?>" id="advanced-filters">
+                    <div class="filter-group">
+                        <label>Price Range (BDT)</label>
+                        <div class="filter-group-range">
+                            <input type="number" name="min_price" value="<?php echo $minPrice !== null ? htmlspecialchars((string) $minPrice, ENT_QUOTES, 'UTF-8') : ''; ?>" placeholder="Min" min="0">
+                            <span style="color: #64748b;">-</span>
+                            <input type="number" name="max_price" value="<?php echo $maxPrice !== null ? htmlspecialchars((string) $maxPrice, ENT_QUOTES, 'UTF-8') : ''; ?>" placeholder="Max" min="0">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Area (Sq Ft)</label>
+                        <div class="filter-group-range">
+                            <input type="number" name="min_area" value="<?php echo $minArea !== null ? htmlspecialchars((string) $minArea, ENT_QUOTES, 'UTF-8') : ''; ?>" placeholder="Min" min="0">
+                            <span style="color: #64748b;">-</span>
+                            <input type="number" name="max_area" value="<?php echo $maxArea !== null ? htmlspecialchars((string) $maxArea, ENT_QUOTES, 'UTF-8') : ''; ?>" placeholder="Max" min="0">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Bedrooms</label>
+                        <select name="bedrooms">
+                            <option value="">Any</option>
+                            <option value="1" <?php echo $bedrooms === 1 ? 'selected' : ''; ?>>1 Bed</option>
+                            <option value="2" <?php echo $bedrooms === 2 ? 'selected' : ''; ?>>2 Beds</option>
+                            <option value="3" <?php echo $bedrooms === 3 ? 'selected' : ''; ?>>3 Beds</option>
+                            <option value="4" <?php echo $bedrooms === 4 ? 'selected' : ''; ?>>4 Beds</option>
+                            <option value="5" <?php echo $bedrooms === 5 ? 'selected' : ''; ?>>5+ Beds</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Bathrooms</label>
+                        <select name="bathrooms">
+                            <option value="">Any</option>
+                            <option value="1" <?php echo $bathrooms === 1 ? 'selected' : ''; ?>>1 Bath</option>
+                            <option value="2" <?php echo $bathrooms === 2 ? 'selected' : ''; ?>>2 Baths</option>
+                            <option value="3" <?php echo $bathrooms === 3 ? 'selected' : ''; ?>>3 Baths</option>
+                            <option value="4" <?php echo $bathrooms === 4 ? 'selected' : ''; ?>>4+ Baths</option>
+                        </select>
+                    </div>
+                </div>
             </form>
+
+            <script>
+                function toggleAdvancedFilters() {
+                    const panel = document.getElementById('advanced-filters');
+                    panel.classList.toggle('active');
+                }
+            </script>
         </header>
 
         <?php if (empty($listings)): ?>
