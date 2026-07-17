@@ -75,6 +75,13 @@ try {
     error_log('Search query failed: ' . $e->getMessage());
     $listings = [];
 }
+
+$favoritedIds = [];
+if (isLoggedIn() && currentRole() === 'Tenant') {
+    $favStmt = $pdo->prepare('SELECT property_id FROM tenant_favorites WHERE tenant_id = :tenant_id');
+    $favStmt->execute(['tenant_id' => $_SESSION['user_id']]);
+    $favoritedIds = array_map('intval', $favStmt->fetchAll(PDO::FETCH_COLUMN));
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -338,6 +345,30 @@ try {
             border-radius: 8px;
             border: 1px solid var(--border);
         }
+        .fav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+        }
+        .fav-btn:hover {
+            transform: scale(1.1);
+            background: white;
+            color: #ef4444;
+        }
+        .fav-btn.active {
+            color: #ef4444;
+            background: white;
+        }
     </style>
 </head>
 <body>
@@ -346,6 +377,19 @@ try {
             <a href="<?php echo htmlspecialchars(get_dashboard_url(currentRole() ?? 'Tenant'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-back">← Back to Dashboard</a>
         <?php else: ?>
             <a href="login.php" class="nav-back">← Back to Login</a>
+        <?php endif; ?>
+
+        <?php
+        $flashSuccess = $_SESSION['flash_success'] ?? '';
+        unset($_SESSION['flash_success']);
+        $flashError = $_SESSION['flash_error'] ?? '';
+        unset($_SESSION['flash_error']);
+        ?>
+        <?php if ($flashSuccess !== ''): ?>
+            <div class="alert success" role="status" style="margin-bottom: 1.5rem;"><?php echo htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
+        <?php if ($flashError !== ''): ?>
+            <div class="alert error" role="alert" style="margin-bottom: 1.5rem;"><?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?></div>
         <?php endif; ?>
 
         <header class="search-header">
@@ -428,42 +472,54 @@ try {
         <?php else: ?>
             <main class="property-grid">
                 <?php foreach ($listings as $prop): ?>
-                    <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-card-link">
-                        <div class="property-card">
-                            <?php if ($prop['image_path']): ?>
-                                <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
-                            <?php else: ?>
-                                <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
-                            <?php endif; ?>
+                    <div style="position: relative;">
+                        <?php if (isLoggedIn() && currentRole() === 'Tenant'): ?>
+                            <form action="toggle_favorite.php" method="post" style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="property_id" value="<?php echo $prop['id']; ?>">
+                                <button type="submit" class="fav-btn <?php echo in_array((int)$prop['id'], $favoritedIds, true) ? 'active' : ''; ?>" title="<?php echo in_array((int)$prop['id'], $favoritedIds, true) ? 'Remove from Favorites' : 'Add to Favorites'; ?>">
+                                    ❤
+                                </button>
+                            </form>
+                        <?php endif; ?>
 
-                            <div class="property-content">
-                                <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
-                                <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
-                                <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                
-                                <div class="property-specs">
-                                    <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
-                                    <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
-                                    <?php if ($prop['area_sqft']): ?>
-                                        <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
-                                    <?php endif; ?>
+                        <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-card-link">
+                            <div class="property-card" style="height: 100%;">
+                                <?php if ($prop['image_path']): ?>
+                                    <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
+                                <?php else: ?>
+                                    <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
+                                <?php endif; ?>
+
+                                <div class="property-content">
+                                    <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
+                                    <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                    <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                    
+                                    <div class="property-specs">
+                                        <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
+                                        <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
+                                        <?php if ($prop['area_sqft']): ?>
+                                            <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                                        <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
+                                            <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </span>
+                                    </div>
+
+                                    <div class="contact-info">
+                                        <span style="font-weight: 600; color: var(--text);">Owner:</span> <?php echo htmlspecialchars((string) $prop['landlord_name'], ENT_QUOTES, 'UTF-8'); ?><br>
+                                        <span style="font-weight: 600; color: var(--text);">Phone:</span> <?php echo htmlspecialchars((string) $prop['landlord_phone'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
+
+                                    <span class="view-details-btn">View Details</span>
                                 </div>
-
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-                                    <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
-                                        <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </span>
-                                </div>
-
-                                <div class="contact-info">
-                                    <span style="font-weight: 600; color: var(--text);">Owner:</span> <?php echo htmlspecialchars((string) $prop['landlord_name'], ENT_QUOTES, 'UTF-8'); ?><br>
-                                    <span style="font-weight: 600; color: var(--text);">Phone:</span> <?php echo htmlspecialchars((string) $prop['landlord_phone'], ENT_QUOTES, 'UTF-8'); ?>
-                                </div>
-
-                                <span class="view-details-btn">View Details</span>
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
                 <?php endforeach; ?>
             </main>
         <?php endif; ?>

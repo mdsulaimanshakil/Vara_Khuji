@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 
 startSecureSession();
 
@@ -11,6 +12,25 @@ require_role(['Tenant']);
 
 $userName = $_SESSION['user_name'] ?? 'Tenant';
 $userEmail = $_SESSION['user_email'] ?? '';
+
+$flashSuccess = $_SESSION['flash_success'] ?? '';
+unset($_SESSION['flash_success']);
+
+$flashError = $_SESSION['flash_error'] ?? '';
+unset($_SESSION['flash_error']);
+
+// Fetch tenant's favorited properties
+$favStmt = $pdo->prepare(
+    'SELECT p.*, pi.image_path, u.full_name as landlord_name 
+     FROM tenant_favorites tf 
+     JOIN properties p ON tf.property_id = p.id
+     LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
+     LEFT JOIN users u ON p.landlord_id = u.id
+     WHERE tf.tenant_id = :tenant_id 
+     ORDER BY tf.created_at DESC'
+);
+$favStmt->execute(['tenant_id' => $_SESSION['user_id']]);
+$favorites = $favStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +38,7 @@ $userEmail = $_SESSION['user_email'] ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tenant Dashboard | HRMS</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link class="stylesheet" rel="stylesheet" href="assets/css/style.css">
     <style>
         .dashboard-container {
             max-width: 1200px;
@@ -79,6 +99,7 @@ $userEmail = $_SESSION['user_email'] ?? '';
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
+            margin-bottom: 3rem;
         }
         .card {
             background: white;
@@ -119,6 +140,111 @@ $userEmail = $_SESSION['user_email'] ?? '';
         .btn-action:hover {
             background: var(--accent-strong);
         }
+        .favorites-section {
+            margin-top: 3rem;
+        }
+        .favorites-section h2 {
+            font-size: 1.5rem;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+        .property-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .property-card:hover {
+            transform: translateY(-5px);
+        }
+        .property-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #f1f5f9;
+        }
+        .property-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        .property-rent {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 0;
+        }
+        .property-rent span {
+            font-size: 0.9rem;
+            color: var(--muted);
+            font-weight: normal;
+        }
+        .property-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            color: var(--text);
+        }
+        .property-location {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+        .status-badge {
+            align-self: flex-start;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .status-badge.available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-badge.booked {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-badge.unavailable {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-remove-fav {
+            display: block;
+            width: 100%;
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fca5a5;
+            padding: 0.6rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+            margin-top: auto;
+        }
+        .btn-remove-fav:hover {
+            background: #fecaca;
+        }
+        .property-link {
+            text-decoration: none;
+            color: inherit;
+        }
     </style>
 </head>
 <body>
@@ -136,6 +262,14 @@ $userEmail = $_SESSION['user_email'] ?? '';
                 </form>
             </div>
         </header>
+
+        <!-- Flash messages -->
+        <?php if ($flashSuccess !== ''): ?>
+            <div class="alert success" role="status" style="margin-bottom: 1.5rem;"><?php echo htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
+        <?php if ($flashError !== ''): ?>
+            <div class="alert error" role="alert" style="margin-bottom: 1.5rem;"><?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?></div>
+        <?php endif; ?>
 
         <main class="grid-cards">
             <section class="card">
@@ -156,6 +290,49 @@ $userEmail = $_SESSION['user_email'] ?? '';
                 <a href="#" class="btn-action">Create Request</a>
             </section>
         </main>
+
+        <!-- Favorites Section -->
+        <section class="favorites-section">
+            <h2>My Favorited Listings</h2>
+            <?php if (empty($favorites)): ?>
+                <div style="background: white; border-radius: 16px; padding: 3rem; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5rem;">You haven't favorited any listings yet.</p>
+                    <a href="properties.php" class="btn-action">Browse Listings to Favorite</a>
+                </div>
+            <?php else: ?>
+                <div class="favorites-grid">
+                    <?php foreach ($favorites as $prop): ?>
+                        <div class="property-card">
+                            <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-link">
+                                <?php if ($prop['image_path']): ?>
+                                    <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
+                                <?php else: ?>
+                                    <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
+                                <?php endif; ?>
+                            </a>
+
+                            <div class="property-content">
+                                <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
+                                <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-link">
+                                    <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                </a>
+                                <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                
+                                <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
+                                    <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
+                                </span>
+
+                                <form action="toggle_favorite.php" method="post" onsubmit="return confirm('Remove this property from your favorites?');">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <input type="hidden" name="property_id" value="<?php echo $prop['id']; ?>">
+                                    <button type="submit" class="btn-remove-fav">Remove from Favorites</button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
     </div>
 </body>
 </html>

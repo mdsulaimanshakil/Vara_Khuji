@@ -36,3 +36,14 @@ CREATE TABLE IF NOT EXISTS property_images (
     FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS tenant_favorites (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL,
+    property_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE,
+    UNIQUE KEY unique_tenant_property (tenant_id, property_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
