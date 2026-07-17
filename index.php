@@ -217,6 +217,9 @@ $roleOptions = ['Tenant', 'Landlord'];
                 </div>
 
                 <button type="submit" class="submit-btn">Register account</button>
+                <p style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--muted);">
+                    Already have an account? <a href="login.php" style="color: var(--accent); text-decoration: none; font-weight: 600;">Sign in here</a>.
+                </p>
             </form>
         </section>
     </main>
