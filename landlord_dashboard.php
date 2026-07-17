@@ -193,7 +193,7 @@ $properties = $stmt->fetchAll();
             background: #d1fae5;
             color: #065f46;
         }
-        .status-badge.rented {
+        .status-badge.booked {
             background: #fef3c7;
             color: #92400e;
         }

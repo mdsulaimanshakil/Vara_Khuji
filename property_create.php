@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($formData['area_sqft'] !== '' && !ctype_digit($formData['area_sqft'])) {
         $errors[] = 'Enter a valid area size in sqft.';
     }
-    if (!in_array($formData['availability_status'], ['Available', 'Rented', 'Unavailable'], true)) {
+    if (!in_array($formData['availability_status'], ['Available', 'Booked', 'Unavailable'], true)) {
         $errors[] = 'Select a valid availability status.';
     }
 
@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="availability_status">Availability Status</label>
                     <select id="availability_status" name="availability_status" required>
                         <option value="Available" <?php echo $formData['availability_status'] === 'Available' ? 'selected' : ''; ?>>Available</option>
-                        <option value="Rented" <?php echo $formData['availability_status'] === 'Rented' ? 'selected' : ''; ?>>Rented</option>
+                        <option value="Booked" <?php echo $formData['availability_status'] === 'Booked' ? 'selected' : ''; ?>>Booked</option>
                         <option value="Unavailable" <?php echo $formData['availability_status'] === 'Unavailable' ? 'selected' : ''; ?>>Unavailable</option>
                     </select>
                 </div>

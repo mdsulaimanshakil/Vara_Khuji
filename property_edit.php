@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['action'])) {
     if ($bedrooms === '' || !ctype_digit($bedrooms)) $errors[] = 'Enter valid bedrooms.';
     if ($bathrooms === '' || !ctype_digit($bathrooms)) $errors[] = 'Enter valid bathrooms.';
     if ($area_sqft !== '' && !ctype_digit($area_sqft)) $errors[] = 'Enter a valid area size.';
-    if (!in_array($availability_status, ['Available', 'Rented', 'Unavailable'], true)) $errors[] = 'Invalid availability status.';
+    if (!in_array($availability_status, ['Available', 'Booked', 'Unavailable'], true)) $errors[] = 'Invalid availability status.';
 
     // New Image Uploads
     $uploadedImages = [];
@@ -436,7 +436,7 @@ unset($_SESSION['flash_success']);
                     <label for="availability_status">Availability Status</label>
                     <select id="availability_status" name="availability_status" required>
                         <option value="Available" <?php echo $property['availability_status'] === 'Available' ? 'selected' : ''; ?>>Available</option>
-                        <option value="Rented" <?php echo $property['availability_status'] === 'Rented' ? 'selected' : ''; ?>>Rented</option>
+                        <option value="Booked" <?php echo $property['availability_status'] === 'Booked' ? 'selected' : ''; ?>>Booked</option>
                         <option value="Unavailable" <?php echo $property['availability_status'] === 'Unavailable' ? 'selected' : ''; ?>>Unavailable</option>
                     </select>
                 </div>
