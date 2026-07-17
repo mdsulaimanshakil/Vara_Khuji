@@ -31,6 +31,19 @@ $favStmt = $pdo->prepare(
 );
 $favStmt->execute(['tenant_id' => $_SESSION['user_id']]);
 $favorites = $favStmt->fetchAll();
+
+// Fetch tenant's submitted rental requests
+$reqStmt = $pdo->prepare(
+    'SELECT r.*, p.title AS property_title, p.rent, p.location, pi.image_path, u.full_name AS landlord_name, u.phone AS landlord_phone
+     FROM rental_requests r
+     JOIN properties p ON r.property_id = p.id
+     LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_primary = 1
+     LEFT JOIN users u ON p.landlord_id = u.id
+     WHERE r.tenant_id = :tenant_id
+     ORDER BY r.created_at DESC'
+);
+$reqStmt->execute(['tenant_id' => $_SESSION['user_id']]);
+$rentalRequests = $reqStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -290,6 +303,73 @@ $favorites = $favStmt->fetchAll();
                 <a href="#" class="btn-action">Create Request</a>
             </section>
         </main>
+
+        <!-- Rental Requests Section -->
+        <section class="requests-section" style="margin-top: 2rem; margin-bottom: 3rem;">
+            <h2 style="font-size: 1.5rem; color: var(--text); margin-bottom: 1.5rem; font-weight: 700;">My Rental Requests</h2>
+            
+            <?php if (empty($rentalRequests)): ?>
+                <div style="background: white; border-radius: 16px; padding: 3rem; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5rem;">You haven't submitted any rental requests yet.</p>
+                    <a href="properties.php" class="btn-action">Find Properties to Apply</a>
+                </div>
+            <?php else: ?>
+                <div class="favorites-grid">
+                    <?php foreach ($rentalRequests as $req): ?>
+                        <div class="property-card">
+                            <a href="property_detail.php?id=<?php echo $req['property_id']; ?>" class="property-link">
+                                <?php if ($req['image_path']): ?>
+                                    <img src="<?php echo htmlspecialchars($req['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($req['property_title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
+                                 <?php else: ?>
+                                    <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
+                                <?php endif; ?>
+                            </a>
+
+                            <div class="property-content">
+                                <h3 class="property-rent"><?php echo number_format((float) $req['rent']); ?> <span>BDT / month</span></h3>
+                                <a href="property_detail.php?id=<?php echo $req['property_id']; ?>" class="property-link">
+                                    <h4 class="property-title"><?php echo htmlspecialchars($req['property_title'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                </a>
+                                <p class="property-location">📍 <?php echo htmlspecialchars($req['location'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                
+                                <div style="margin-bottom: 1rem; border-top: 1px solid var(--border); padding-top: 0.8rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                                    <span style="font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase;">Application Details</span>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text);">Status: 
+                                        <span style="font-size: 0.8rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; text-transform: uppercase; <?php 
+                                            if ($req['status'] === 'Accepted') echo 'background: #d1fae5; color: #065f46;';
+                                            elseif ($req['status'] === 'Rejected') echo 'background: #fee2e2; color: #991b1b;';
+                                            else echo 'background: #e0f2fe; color: #0369a1;';
+                                        ?>">
+                                            <?php echo htmlspecialchars($req['status'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </span>
+                                    </span>
+                                    <?php if ($req['message']): ?>
+                                        <p style="font-size: 0.8rem; color: var(--muted); margin: 0.25rem 0 0; line-height: 1.4;">
+                                            <strong>Message:</strong> <em>"<?php echo htmlspecialchars($req['message'], ENT_QUOTES, 'UTF-8'); ?>"</em>
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: auto; border-top: 1px solid var(--border); padding-top: 0.8rem;">
+                                    <?php if ($req['status'] === 'Pending'): ?>
+                                        <form action="cancel_rental_request.php" method="post" style="margin: 0; width: 100%;" onsubmit="return confirm('Cancel this rental request?');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
+                                            <button type="submit" class="btn-remove-fav" style="margin-top: 0; width: 100%;">Cancel Request</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <div style="font-size: 0.8rem; color: var(--muted); width: 100%;">
+                                            <strong>Landlord:</strong> <?php echo htmlspecialchars((string) $req['landlord_name'], ENT_QUOTES, 'UTF-8'); ?><br>
+                                            <strong>Phone:</strong> <?php echo htmlspecialchars((string) $req['landlord_phone'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
 
         <!-- Favorites Section -->
         <section class="favorites-section">

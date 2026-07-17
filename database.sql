@@ -46,4 +46,18 @@ CREATE TABLE IF NOT EXISTS tenant_favorites (
     UNIQUE KEY unique_tenant_property (tenant_id, property_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS rental_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tenant_id INT UNSIGNED NOT NULL,
+    property_id INT UNSIGNED NOT NULL,
+    message TEXT DEFAULT NULL,
+    status ENUM('Pending', 'Accepted', 'Rejected') NOT NULL DEFAULT 'Pending',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (tenant_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE,
+    UNIQUE KEY unique_tenant_property_request (tenant_id, property_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 

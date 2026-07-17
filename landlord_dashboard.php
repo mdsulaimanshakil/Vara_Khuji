@@ -28,6 +28,18 @@ $stmt = $pdo->prepare(
 );
 $stmt->execute(['landlord_id' => $_SESSION['user_id']]);
 $properties = $stmt->fetchAll();
+
+// Fetch rental requests for landlord's properties
+$reqStmt = $pdo->prepare(
+    'SELECT r.*, p.title AS property_title, u.full_name AS tenant_name, u.phone AS tenant_phone, u.email AS tenant_email
+     FROM rental_requests r
+     JOIN properties p ON r.property_id = p.id
+     JOIN users u ON r.tenant_id = u.id
+     WHERE p.landlord_id = :landlord_id
+     ORDER BY r.created_at DESC'
+);
+$reqStmt->execute(['landlord_id' => $_SESSION['user_id']]);
+$requestsReceived = $reqStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -278,6 +290,74 @@ $properties = $stmt->fetchAll();
         <?php if ($flashError !== ''): ?>
             <div class="alert error" role="alert"><?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?></div>
         <?php endif; ?>
+
+        <!-- Rental Requests Section -->
+        <section class="requests-section" style="margin-bottom: 3rem;">
+            <div class="section-header">
+                <h2>Rental Requests Received</h2>
+                <span style="background: var(--accent); color: white; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 700;"><?php echo count($requestsReceived); ?> Total</span>
+            </div>
+
+            <?php if (empty($requestsReceived)): ?>
+                <div style="background: white; border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <p style="color: var(--muted); font-size: 0.95rem; margin: 0;">No rental requests received yet.</p>
+                </div>
+            <?php else: ?>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;">
+                    <?php foreach ($requestsReceived as $req): ?>
+                        <div class="request-card" style="background: white; border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 1rem; position: relative;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Property</span>
+                                <h3 style="margin: 0.2rem 0 0; font-size: 1.1rem; color: var(--text); font-weight: 800;"><?php echo htmlspecialchars($req['property_title'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                            </div>
+
+                            <div style="border-top: 1px solid var(--border); padding-top: 0.8rem;">
+                                <span style="font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Applicant Details</span>
+                                <p style="margin: 0.25rem 0; font-size: 0.9rem; font-weight: 700; color: var(--text);"><?php echo htmlspecialchars($req['tenant_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">📞 <?php echo htmlspecialchars($req['tenant_phone'], ENT_QUOTES, 'UTF-8'); ?> | ✉️ <?php echo htmlspecialchars($req['tenant_email'], ENT_QUOTES, 'UTF-8'); ?></p>
+                            </div>
+
+                            <?php if ($req['message'] !== null && $req['message'] !== ''): ?>
+                                <div style="background: #f8fafc; border-radius: 8px; padding: 0.8rem; border: 1px solid var(--border);">
+                                    <span style="font-size: 0.7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.2rem;">Message</span>
+                                    <p style="margin: 0; font-size: 0.85rem; line-height: 1.4; color: var(--text); font-style: italic;">"<?php echo htmlspecialchars($req['message'], ENT_QUOTES, 'UTF-8'); ?>"</p>
+                                </div>
+                            <?php endif; ?>
+
+                            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 1rem;">
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.2rem;">Status</span>
+                                    <span style="font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; text-transform: uppercase; <?php 
+                                        if ($req['status'] === 'Accepted') echo 'background: #d1fae5; color: #065f46;';
+                                        elseif ($req['status'] === 'Rejected') echo 'background: #fee2e2; color: #991b1b;';
+                                        else echo 'background: #e0f2fe; color: #0369a1;';
+                                    ?>">
+                                        <?php echo htmlspecialchars($req['status'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                </div>
+
+                                <?php if ($req['status'] === 'Pending'): ?>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <form action="handle_rental_request.php" method="post" style="margin: 0;" onsubmit="return confirm('Reject this rental request?');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
+                                            <input type="hidden" name="action" value="Reject">
+                                            <button type="submit" style="background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 0.5rem 0.8rem; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">Reject</button>
+                                        </form>
+                                        <form action="handle_rental_request.php" method="post" style="margin: 0;" onsubmit="return confirm('Accept this rental request? This will mark the property as Booked and reject other pending requests.');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="request_id" value="<?php echo $req['id']; ?>">
+                                            <input type="hidden" name="action" value="Accept">
+                                            <button type="submit" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">Accept</button>
+                                        </form>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
 
         <div class="section-header">
             <h2>Your Properties</h2>

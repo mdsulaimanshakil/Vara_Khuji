@@ -49,6 +49,23 @@ $availability = $property['availability_status'] ?? 'Unavailable';
 $availabilityClass = strtolower((string) $availability);
 $hasArea = isset($property['area_sqft']) && $property['area_sqft'] !== null && $property['area_sqft'] !== '';
 $backUrl = isLoggedIn() ? get_dashboard_url(currentRole() ?? 'Tenant') : 'properties.php';
+
+$hasRequested = false;
+$requestStatus = '';
+$requestMessage = '';
+if (isLoggedIn() && currentRole() === 'Tenant') {
+    $reqStmt = $pdo->prepare('SELECT status, message FROM rental_requests WHERE tenant_id = :tenant_id AND property_id = :property_id LIMIT 1');
+    $reqStmt->execute([
+        'tenant_id' => $_SESSION['user_id'],
+        'property_id' => $propertyId
+    ]);
+    $req = $reqStmt->fetch();
+    if ($req) {
+        $hasRequested = true;
+        $requestStatus = $req['status'];
+        $requestMessage = $req['message'] ?? '';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -342,6 +359,24 @@ $backUrl = isLoggedIn() ? get_dashboard_url(currentRole() ?? 'Tenant') : 'proper
             <a href="properties.php" class="back-link">Browse More Listings</a>
         </div>
 
+        <!-- Flash messages -->
+        <?php 
+        $flashSuccess = $_SESSION['flash_success'] ?? '';
+        unset($_SESSION['flash_success']);
+        $flashError = $_SESSION['flash_error'] ?? '';
+        unset($_SESSION['flash_error']);
+        ?>
+        <?php if ($flashSuccess !== ''): ?>
+            <div style="background: rgba(16, 185, 129, 0.15); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 12px; font-weight: 600; margin-bottom: 1.5rem;" role="status">
+                <?php echo htmlspecialchars($flashSuccess, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($flashError !== ''): ?>
+            <div style="background: rgba(239, 68, 68, 0.15); color: #991b1b; border: 1px solid rgba(239, 68, 68, 0.3); padding: 1rem; border-radius: 12px; font-weight: 600; margin-bottom: 1.5rem;" role="alert">
+                <?php echo htmlspecialchars($flashError, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
+
         <?php if (!$property): ?>
             <div class="not-found">
                 <h1>Property not found</h1>
@@ -417,6 +452,46 @@ $backUrl = isLoggedIn() ? get_dashboard_url(currentRole() ?? 'Tenant') : 'proper
                             </div>
                         </div>
                     </div>
+
+                    <?php if (isLoggedIn() && currentRole() === 'Tenant'): ?>
+                        <div class="rental-request-card section-card" style="margin-top: 1.5rem;">
+                            <h2 style="margin-bottom: 0.5rem; color: var(--text);">Rental Application</h2>
+                            
+                            <?php if ($hasRequested): ?>
+                                <div style="padding: 1rem; border-radius: 12px; font-weight: 700; margin-bottom: 1rem; text-align: center; <?php 
+                                    if ($requestStatus === 'Accepted') echo 'background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);';
+                                    elseif ($requestStatus === 'Rejected') echo 'background: rgba(239, 68, 68, 0.15); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3);';
+                                    else echo 'background: rgba(59, 130, 246, 0.15); color: #2563eb; border: 1px solid rgba(59, 130, 246, 0.3);';
+                                ?>">
+                                    Status: <?php echo htmlspecialchars($requestStatus, ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+                                <?php if ($requestMessage !== ''): ?>
+                                    <p style="font-size: 0.85rem; color: var(--muted); margin: 0; line-height: 1.5;">
+                                        <strong>Your message:</strong><br>
+                                        <em>"<?php echo htmlspecialchars($requestMessage, ENT_QUOTES, 'UTF-8'); ?>"</em>
+                                    </p>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if ($availability === 'Available'): ?>
+                                    <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.5; margin: 0 0 1rem;">
+                                        Interested in this property? Express your interest. Include an optional message to introduce yourself to the landlord.
+                                    </p>
+                                    <form action="submit_rental_request.php" method="post">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <input type="hidden" name="property_id" value="<?php echo $propertyId; ?>">
+                                        <div style="margin-bottom: 1rem;">
+                                            <textarea name="message" placeholder="Introduce yourself, move-in date, occupancy details..." style="width: 100%; min-height: 90px; padding: 0.7rem 0.9rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.85rem; resize: vertical; box-sizing: border-box;"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn-action" style="width: 100%; border: none; cursor: pointer; margin-top: 0; padding: 0.8rem; border-radius: 8px;">Express Interest</button>
+                                    </form>
+                                <?php else: ?>
+                                    <div style="padding: 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 700; text-align: center; font-size: 0.9rem;">
+                                        This property is currently <?php echo htmlspecialchars($availability, ENT_QUOTES, 'UTF-8'); ?>.
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
                 </aside>
             </section>
 
