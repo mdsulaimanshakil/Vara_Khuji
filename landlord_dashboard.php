@@ -181,6 +181,27 @@ $properties = $stmt->fetchAll();
             padding: 0.75rem 0;
             margin-bottom: 1rem;
         }
+        .property-card-link {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
+        .property-card-link:hover .property-card {
+            transform: translateY(-5px);
+        }
+        .view-details-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+        }
         .status-badge {
             align-self: flex-start;
             padding: 0.25rem 0.6rem;
@@ -272,38 +293,42 @@ $properties = $stmt->fetchAll();
             <main class="property-grid">
                 <?php foreach ($properties as $prop): ?>
                     <div class="property-card">
-                        <?php if ($prop['image_path']): ?>
-                            <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
-                        <?php else: ?>
-                            <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
-                        <?php endif; ?>
+                        <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-card-link">
+                            <?php if ($prop['image_path']): ?>
+                                <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
+                            <?php else: ?>
+                                <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
+                            <?php endif; ?>
 
-                        <div class="property-content">
-                            <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
-                            <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
-                            <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
-                            
-                            <div class="property-specs">
-                                <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
-                                <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
-                                <?php if ($prop['area_sqft']): ?>
-                                    <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
-                                <?php endif; ?>
-                            </div>
-
-                            <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
-                                <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
-                            </span>
-
-                            <div class="property-actions" style="margin-top: 1.5rem;">
-                                <a href="property_edit.php?id=<?php echo $prop['id']; ?>" class="btn-edit">Edit</a>
+                            <div class="property-content">
+                                <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
+                                <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
                                 
-                                <form action="property_delete.php" method="post" style="display: inline; flex: 1;" onsubmit="return confirm('Are you sure you want to delete this property listing? This action cannot be undone.');">
-                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
-                                    <input type="hidden" name="id" value="<?php echo $prop['id']; ?>">
-                                    <button type="submit" class="btn-delete" style="width: 100%;">Delete</button>
-                                </form>
+                                <div class="property-specs">
+                                    <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
+                                    <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
+                                    <?php if ($prop['area_sqft']): ?>
+                                        <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
+                                    <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
+                                </span>
+
+                                <span class="view-details-btn">View Details</span>
                             </div>
+                        </a>
+
+                        <div class="property-actions" style="margin-top: 1.5rem;">
+                            <a href="property_edit.php?id=<?php echo $prop['id']; ?>" class="btn-edit">Edit</a>
+                            
+                            <form action="property_delete.php" method="post" style="display: inline; flex: 1;" onsubmit="return confirm('Are you sure you want to delete this property listing? This action cannot be undone.');">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+                                <input type="hidden" name="id" value="<?php echo $prop['id']; ?>">
+                                <button type="submit" class="btn-delete" style="width: 100%;">Delete</button>
+                            </form>
                         </div>
                     </div>
                 <?php endforeach; ?>

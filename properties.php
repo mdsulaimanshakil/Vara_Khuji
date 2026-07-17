@@ -284,6 +284,32 @@ try {
             padding: 0.75rem 0;
             margin-bottom: 1rem;
         }
+        .property-card-link {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
+        .property-card-link:hover .property-card {
+            transform: translateY(-5px);
+        }
+        .view-details-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .view-details-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 24px rgba(20, 88, 199, 0.22);
+        }
         .status-badge {
             align-self: flex-start;
             padding: 0.25rem 0.6rem;
@@ -402,38 +428,42 @@ try {
         <?php else: ?>
             <main class="property-grid">
                 <?php foreach ($listings as $prop): ?>
-                    <div class="property-card">
-                        <?php if ($prop['image_path']): ?>
-                            <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
-                        <?php else: ?>
-                            <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
-                        <?php endif; ?>
+                    <a href="property_detail.php?id=<?php echo $prop['id']; ?>" class="property-card-link">
+                        <div class="property-card">
+                            <?php if ($prop['image_path']): ?>
+                                <img src="<?php echo htmlspecialchars($prop['image_path'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?>" class="property-img">
+                            <?php else: ?>
+                                <div class="property-img" style="display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: italic;">No image uploaded</div>
+                            <?php endif; ?>
 
-                        <div class="property-content">
-                            <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
-                            <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
-                            <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
-                            
-                            <div class="property-specs">
-                                <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
-                                <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
-                                <?php if ($prop['area_sqft']): ?>
-                                    <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
-                                <?php endif; ?>
-                            </div>
+                            <div class="property-content">
+                                <h3 class="property-rent"><?php echo number_format((float) $prop['rent']); ?> <span>BDT / month</span></h3>
+                                <h4 class="property-title"><?php echo htmlspecialchars($prop['title'], ENT_QUOTES, 'UTF-8'); ?></h4>
+                                <p class="property-location">📍 <?php echo htmlspecialchars($prop['location'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                
+                                <div class="property-specs">
+                                    <span>🛏️ <?php echo $prop['bedrooms']; ?> Beds</span>
+                                    <span>🛁 <?php echo $prop['bathrooms']; ?> Baths</span>
+                                    <?php if ($prop['area_sqft']): ?>
+                                        <span>📐 <?php echo $prop['area_sqft']; ?> Sq Ft</span>
+                                    <?php endif; ?>
+                                </div>
 
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-                                <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
-                                    <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
-                                </span>
-                            </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                                    <span class="status-badge <?php echo strtolower($prop['availability_status']); ?>">
+                                        <?php echo htmlspecialchars($prop['availability_status'], ENT_QUOTES, 'UTF-8'); ?>
+                                    </span>
+                                </div>
 
-                            <div class="contact-info">
-                                <span style="font-weight: 600; color: var(--text);">Owner:</span> <?php echo htmlspecialchars((string) $prop['landlord_name'], ENT_QUOTES, 'UTF-8'); ?><br>
-                                <span style="font-weight: 600; color: var(--text);">Phone:</span> <?php echo htmlspecialchars((string) $prop['landlord_phone'], ENT_QUOTES, 'UTF-8'); ?>
+                                <div class="contact-info">
+                                    <span style="font-weight: 600; color: var(--text);">Owner:</span> <?php echo htmlspecialchars((string) $prop['landlord_name'], ENT_QUOTES, 'UTF-8'); ?><br>
+                                    <span style="font-weight: 600; color: var(--text);">Phone:</span> <?php echo htmlspecialchars((string) $prop['landlord_phone'], ENT_QUOTES, 'UTF-8'); ?>
+                                </div>
+
+                                <span class="view-details-btn">View Details</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 <?php endforeach; ?>
             </main>
         <?php endif; ?>
