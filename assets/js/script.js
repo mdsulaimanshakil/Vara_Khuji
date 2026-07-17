@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const strengthText = document.getElementById('strengthText');
     const fieldErrors = document.querySelectorAll('[data-error-for]');
 
+    if (!form || !passwordField || !confirmPasswordField || !strengthBar || !strengthText) {
+        return;
+    }
+
     const validators = {
         full_name: value => {
             if (!value.trim()) return 'Full name is required.';
