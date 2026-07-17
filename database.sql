@@ -10,3 +10,29 @@ CREATE TABLE IF NOT EXISTS users (
     role ENUM('Tenant', 'Landlord', 'Admin') NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS properties (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    landlord_id INT UNSIGNED NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    rent DECIMAL(10, 2) NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    bedrooms INT UNSIGNED NOT NULL,
+    bathrooms INT UNSIGNED NOT NULL,
+    area_sqft INT UNSIGNED DEFAULT NULL,
+    availability_status ENUM('Available', 'Rented', 'Unavailable') NOT NULL DEFAULT 'Available',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (landlord_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS property_images (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    property_id INT UNSIGNED NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    is_primary TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (property_id) REFERENCES properties (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
